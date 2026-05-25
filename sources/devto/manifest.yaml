@@ -1,0 +1,311 @@
+name: devto
+version: 0.2.0
+dsl_version: 3
+backend: http
+description: >-
+  Dev.to developer articles — by technology tag or by global top-voted.
+  No authentication required for public data.
+  Optional API key raises rate limit from 1,000 to 10,000 requests/day.
+base_url: https://dev.to/api
+
+test_queries:
+  - SELECT * FROM devto.articles WHERE tag = 'python' LIMIT 5
+  - SELECT title, reactions, comments_count, author FROM devto.articles WHERE tag = 'javascript' LIMIT 3
+  - SELECT title, reactions, comments_count, author FROM devto.top_articles WHERE top = 7 LIMIT 5
+
+tables:
+  - name: articles
+    description: >-
+      Dev.to articles filtered by technology tag, sorted by newest first.
+      Use WHERE tag = '<technology>' to filter by language or framework.
+    guide: >-
+      Each row is one Dev.to article. Always include:
+        WHERE tag = '<tag>'
+      Tags match common technology names: 'python', 'javascript', 'rust',
+      'django', 'react', 'typescript', 'go', 'kubernetes', etc.
+      'reactions' is the total public reaction count (likes and emoji reactions).
+      'published_at' is an ISO 8601 UTC timestamp string.
+      For globally trending articles (no tag required), use devto.top_articles instead.
+    fetch_limit_default: 30
+    filters:
+      - name: tag
+        required: true
+      - name: api_key
+    request:
+      method: GET
+      path: /articles
+      query:
+        - name: tag
+          from: filter
+          key: tag
+        - name: api-key
+          from: filter
+          key: api_key
+    response:
+      rows_path: []
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 1
+      page_step: 1
+      page_size:
+        default: 30
+        max: 1000
+        query_param: per_page
+    columns:
+      - name: article_id
+        type: Int64
+        nullable: false
+        description: Unique Dev.to article ID.
+        expr:
+          kind: path
+          path:
+            - id
+
+      - name: title
+        type: Utf8
+        nullable: false
+        description: Article title.
+        expr:
+          kind: path
+          path:
+            - title
+
+      - name: description
+        type: Utf8
+        nullable: true
+        description: Short summary or TL;DR of the article.
+        expr:
+          kind: path
+          path:
+            - description
+
+      - name: url
+        type: Utf8
+        nullable: false
+        description: Full URL to the article on dev.to.
+        expr:
+          kind: path
+          path:
+            - url
+
+      - name: reactions
+        type: Int64
+        nullable: false
+        description: Total public reaction count (likes and emoji reactions).
+        expr:
+          kind: path
+          path:
+            - public_reactions_count
+
+      - name: comments_count
+        type: Int64
+        nullable: false
+        description: Number of comments on the article.
+        expr:
+          kind: path
+          path:
+            - comments_count
+
+      - name: reading_time_minutes
+        type: Int64
+        nullable: false
+        description: Estimated reading time in minutes.
+        expr:
+          kind: path
+          path:
+            - reading_time_minutes
+
+      - name: published_at
+        type: Utf8
+        nullable: true
+        description: ISO 8601 UTC timestamp when the article was published.
+        expr:
+          kind: path
+          path:
+            - published_at
+
+      - name: tags
+        type: Utf8
+        nullable: true
+        description: Comma-separated list of tags on this article.
+        expr:
+          kind: path
+          path:
+            - tags
+
+      - name: author
+        type: Utf8
+        nullable: true
+        description: Display name of the article author.
+        expr:
+          kind: path
+          path:
+            - user
+            - name
+
+      - name: username
+        type: Utf8
+        nullable: true
+        description: Dev.to username (handle) of the article author.
+        expr:
+          kind: path
+          path:
+            - user
+            - username
+
+      - name: tag
+        type: Utf8
+        nullable: true
+        description: Echoes the `tag` filter that produced this row.
+        expr:
+          kind: from_filter
+          key: tag
+
+  - name: top_articles
+    description: >-
+      Globally top-voted Dev.to articles over the last N days — no tag filter required.
+      Use WHERE top = 7 for the last week, top = 30 for the last month.
+    guide: >-
+      Each row is one of Dev.to's highest-reaction articles globally over the last N days.
+      Always include:
+        WHERE top = <days>
+      where <days> is an integer: 7 (week), 30 (month), 365 (year).
+      Unlike devto.articles (newest-first by tag), this table surfaces the most-upvoted
+      content platform-wide — useful for discovering viral developer content regardless of tag.
+      'reactions' is the total public reaction count (likes and emoji reactions).
+    fetch_limit_default: 30
+    filters:
+      - name: top
+        required: true
+      - name: api_key
+    request:
+      method: GET
+      path: /articles
+      query:
+        - name: top
+          from: filter
+          key: top
+        - name: api-key
+          from: filter
+          key: api_key
+    response:
+      rows_path: []
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 1
+      page_step: 1
+      page_size:
+        default: 30
+        max: 1000
+        query_param: per_page
+    columns:
+      - name: article_id
+        type: Int64
+        nullable: false
+        description: Unique Dev.to article ID.
+        expr:
+          kind: path
+          path:
+            - id
+
+      - name: title
+        type: Utf8
+        nullable: false
+        description: Article title.
+        expr:
+          kind: path
+          path:
+            - title
+
+      - name: description
+        type: Utf8
+        nullable: true
+        description: Short summary or TL;DR of the article.
+        expr:
+          kind: path
+          path:
+            - description
+
+      - name: url
+        type: Utf8
+        nullable: false
+        description: Full URL to the article on dev.to.
+        expr:
+          kind: path
+          path:
+            - url
+
+      - name: reactions
+        type: Int64
+        nullable: false
+        description: Total public reaction count (likes and emoji reactions).
+        expr:
+          kind: path
+          path:
+            - public_reactions_count
+
+      - name: comments_count
+        type: Int64
+        nullable: false
+        description: Number of comments on the article.
+        expr:
+          kind: path
+          path:
+            - comments_count
+
+      - name: reading_time_minutes
+        type: Int64
+        nullable: false
+        description: Estimated reading time in minutes.
+        expr:
+          kind: path
+          path:
+            - reading_time_minutes
+
+      - name: published_at
+        type: Utf8
+        nullable: true
+        description: ISO 8601 UTC timestamp when the article was published.
+        expr:
+          kind: path
+          path:
+            - published_at
+
+      - name: tags
+        type: Utf8
+        nullable: true
+        description: Comma-separated list of tags on this article.
+        expr:
+          kind: path
+          path:
+            - tags
+
+      - name: author
+        type: Utf8
+        nullable: true
+        description: Display name of the article author.
+        expr:
+          kind: path
+          path:
+            - user
+            - name
+
+      - name: username
+        type: Utf8
+        nullable: true
+        description: Dev.to username (handle) of the article author.
+        expr:
+          kind: path
+          path:
+            - user
+            - username
+
+      - name: top
+        type: Int64
+        nullable: true
+        description: Echoes the `top` filter (number of days) that produced this row.
+        expr:
+          kind: from_filter
+          key: top

@@ -1,0 +1,291 @@
+name: stackoverflow
+version: 0.2.0
+dsl_version: 3
+backend: http
+description: >-
+  Stack Overflow questions via the Stack Exchange API.
+  No authentication required for public questions (300 req/day without a key).
+  Add STACK_EXCHANGE_KEY to .env for 10,000 req/day.
+base_url: https://api.stackexchange.com/2.3
+
+test_queries:
+  - SELECT * FROM stackoverflow.questions WHERE tagged = 'python' AND site = 'stackoverflow' LIMIT 5
+  - SELECT title, score, answer_count, asker FROM stackoverflow.questions WHERE tagged = 'javascript' AND site = 'stackoverflow' LIMIT 3
+  - SELECT name, count FROM stackoverflow.tags WHERE site = 'stackoverflow' LIMIT 5
+
+tables:
+  - name: questions
+    description: >-
+      Stack Overflow questions filtered by tag, sorted by vote score descending.
+      Use WHERE tagged = '<technology>' AND site = 'stackoverflow'.
+    guide: >-
+      Each row is one Stack Overflow question. Always include:
+        WHERE tagged = '<tag>' AND site = 'stackoverflow'
+      Tags follow Stack Overflow naming: 'python', 'javascript', 'django', 'express', etc.
+      'score' is net upvotes minus downvotes. 'is_answered' is true when an accepted answer exists.
+    fetch_limit_default: 25
+    filters:
+      - name: tagged
+        required: true
+      - name: site
+        required: true
+      - name: sort
+      - name: order
+      - name: key
+    request:
+      method: GET
+      path: /questions
+      query:
+        - name: tagged
+          from: filter
+          key: tagged
+        - name: site
+          from: filter
+          key: site
+        - name: sort
+          from: filter
+          key: sort
+        - name: order
+          from: filter
+          key: order
+        - name: key
+          from: filter
+          key: key
+    response:
+      rows_path:
+        - items
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 1
+      page_step: 1
+      page_size:
+        default: 25
+        max: 100
+        query_param: pagesize
+    columns:
+      - name: question_id
+        type: Int64
+        nullable: false
+        description: Unique Stack Overflow question ID.
+        expr:
+          kind: path
+          path:
+            - question_id
+
+      - name: title
+        type: Utf8
+        nullable: false
+        description: Question title.
+        expr:
+          kind: path
+          path:
+            - title
+
+      - name: score
+        type: Int64
+        nullable: false
+        description: Net vote score (upvotes minus downvotes).
+        expr:
+          kind: path
+          path:
+            - score
+
+      - name: answer_count
+        type: Int64
+        nullable: false
+        description: Number of posted answers.
+        expr:
+          kind: path
+          path:
+            - answer_count
+
+      - name: view_count
+        type: Int64
+        nullable: false
+        description: Total page view count.
+        expr:
+          kind: path
+          path:
+            - view_count
+
+      - name: is_answered
+        type: Boolean
+        nullable: false
+        description: True if the question has an accepted answer.
+        expr:
+          kind: path
+          path:
+            - is_answered
+
+      - name: tags
+        type: Utf8
+        nullable: true
+        description: Comma-joined list of tags on this question.
+        expr:
+          kind: join_array
+          path:
+            - tags
+
+      - name: asker
+        type: Utf8
+        nullable: true
+        description: Display name of the question asker.
+        expr:
+          kind: path
+          path:
+            - owner
+            - display_name
+
+      - name: created_at
+        type: Timestamp
+        nullable: false
+        description: When the question was posted (Unix epoch → UTC timestamp).
+        expr:
+          kind: format_timestamp
+          input: seconds
+          expr:
+            kind: path
+            path:
+              - creation_date
+
+      - name: link
+        type: Utf8
+        nullable: false
+        description: Direct URL to the Stack Overflow question.
+        expr:
+          kind: path
+          path:
+            - link
+
+      - name: tagged
+        type: Utf8
+        nullable: true
+        description: Echoes the `tagged` filter that produced this row.
+        expr:
+          kind: from_filter
+          key: tagged
+
+      - name: site
+        type: Utf8
+        nullable: true
+        description: Echoes the `site` filter that produced this row.
+        expr:
+          kind: from_filter
+          key: site
+
+      - name: sort
+        type: Utf8
+        nullable: true
+        description: Echoes the `sort` filter (e.g. 'votes', 'activity', 'creation').
+        expr:
+          kind: from_filter
+          key: sort
+
+      - name: order
+        type: Utf8
+        nullable: true
+        description: Echoes the `order` filter ('desc' or 'asc').
+        expr:
+          kind: from_filter
+          key: order
+
+  - name: tags
+    description: >-
+      Popular tags on a Stack Exchange site, sorted by question count descending.
+      Use WHERE site = 'stackoverflow' to query Stack Overflow tags.
+    guide: >-
+      Each row is one Stack Exchange tag. Always include:
+        WHERE site = '<site>'
+      Valid sites: 'stackoverflow', 'softwareengineering', 'datascience', etc.
+      'count' is the total number of questions tagged with this tag.
+      Use this table to discover valid tag names before querying stackoverflow.questions.
+      Sort options: 'popular' (default, by count), 'activity' (recent use), 'name' (alphabetical).
+    fetch_limit_default: 25
+    filters:
+      - name: site
+        required: true
+      - name: sort
+      - name: order
+      - name: key
+    request:
+      method: GET
+      path: /tags
+      query:
+        - name: site
+          from: filter
+          key: site
+        - name: sort
+          from: filter
+          key: sort
+        - name: order
+          from: filter
+          key: order
+        - name: key
+          from: filter
+          key: key
+    response:
+      rows_path:
+        - items
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 1
+      page_step: 1
+      page_size:
+        default: 25
+        max: 100
+        query_param: pagesize
+    columns:
+      - name: name
+        type: Utf8
+        nullable: false
+        description: The tag name as used in Stack Overflow questions (e.g. 'python', 'javascript').
+        expr:
+          kind: path
+          path:
+            - name
+
+      - name: count
+        type: Int64
+        nullable: false
+        description: Total number of questions on this site tagged with this tag.
+        expr:
+          kind: path
+          path:
+            - count
+
+      - name: has_synonyms
+        type: Boolean
+        nullable: false
+        description: True if this tag has synonym tags that redirect to it.
+        expr:
+          kind: path
+          path:
+            - has_synonyms
+
+      - name: is_moderator_only
+        type: Boolean
+        nullable: false
+        description: True if only moderators can add this tag to questions.
+        expr:
+          kind: path
+          path:
+            - is_moderator_only
+
+      - name: is_required
+        type: Boolean
+        nullable: false
+        description: True if this tag must be present on all questions for this site.
+        expr:
+          kind: path
+          path:
+            - is_required
+
+      - name: site
+        type: Utf8
+        nullable: true
+        description: Echoes the `site` filter that produced this row.
+        expr:
+          kind: from_filter
+          key: site

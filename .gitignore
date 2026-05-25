@@ -1,0 +1,30 @@
+# Claude Code local session config
+.claude/
+
+# Coral installed skills (reinstallable via: npx skills add withcoral/skills)
+.agents/skills/coral/
+.agents/skills/coral-create-source-spec/
+.agents/skills/coral-review-source-spec/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Environment variables
+.env
+
+# Coral community source repo (cloned temporarily to install hn/osv sources — not needed after install)
+coral-repo/
+
+# OS
+.DS_Store
+
+# Internal planning documents — not for public repo
+docs/SRS.docx
+docs/
