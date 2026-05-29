@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "coral": {
+      "source": "withcoral/skills",
+      "sourceType": "github",
+      "skillPath": "coral/SKILL.md",
+      "computedHash": "415c43411b536c9232d50e9bab8803fb59c797ca4e03884e360751a4d2ab5c42"
+    },
+    "coral-create-source-spec": {
+      "source": "withcoral/skills",
+      "sourceType": "github",
+      "skillPath": "coral-create-source-spec/SKILL.md",
+      "computedHash": "ccca3145034a5709d86a3b8e5136b38519fd40a4e0680bc275afc6ab700b3c67"
+    },
+    "coral-review-source-spec": {
+      "source": "withcoral/skills",
+      "sourceType": "github",
+      "skillPath": "coral-review-source-spec/SKILL.md",
+      "computedHash": "9e5f98c3b6e9ebfeba418fbdfd4661612011f151b7877d9af39a592b95d6fc60"
+    }
+  }
+}

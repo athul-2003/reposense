@@ -1,10 +1,6 @@
 # Claude Code local session config
 .claude/
 
-# Coral installed skills (reinstallable via: npx skills add withcoral/skills)
-.agents/skills/coral/
-.agents/skills/coral-create-source-spec/
-.agents/skills/coral-review-source-spec/
 
 # Python
 __pycache__/
