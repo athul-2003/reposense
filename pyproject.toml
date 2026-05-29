@@ -1,0 +1,26 @@
+[project]
+name = "reposense"
+version = "0.1.0"
+description = "AI-powered open source repo intelligence agent"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.104.1",
+    "openai>=1.0.0",
+    "click>=8.4.1",
+    "python-dotenv>=1.2.2",
+    "rich>=15.0.0",
+    "textual>=8.2.7",
+    "mcp>=1.27.1",
+]
+
+[project.scripts]
+reposense = "reposense:cli"
+
+[tool.setuptools]
+py-modules = ["reposense"]
+
+[tool.setuptools.packages.find]
+include = ["agent*", "ui*", "queries*"]
+
+[tool.setuptools.package-data]
+queries = ["*.sql"]
