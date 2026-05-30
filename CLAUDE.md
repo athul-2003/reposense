@@ -13,6 +13,16 @@ The following project skills are available as slash commands and should be appli
 
 Skill definitions live in `.agents/skills/<name>/SKILL.md`. Read the relevant skill file before acting on tasks that match its trigger.
 
+## MCP usage
+
+When querying GitHub repos, issues, PRs, or any live data for this project — always prefer the RepoSense MCP tools over calling Coral directly:
+
+- `mcp__reposense__run_command` — for any of the 12 built-in commands (triage, health, pulse, etc.)
+- `mcp__reposense__coral_sql` — for custom SQL queries against live sources
+- `mcp__reposense__list_sources` — to discover installed sources and schema
+
+Do NOT use `mcp__coral__sql` directly when the RepoSense MCP is available.
+
 ## Git rules (always apply)
 
 - Never commit directly to `main` — always use a feature branch + PR
