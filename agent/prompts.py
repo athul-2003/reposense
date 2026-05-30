@@ -28,7 +28,8 @@ Filters for q string:
 
 Direct table (for CROSS JOIN / when search not needed):
   github.issues WHERE owner = '{owner}' AND repo = '{repo}' AND state = 'open'
-  Returns: number, title, state, created_at, user_login
+  Returns: number, title, state, created_at, user__login (nested notation — NOT user_login)
+  WARNING: nested columns use double-underscore: user__login, assignee__login, etc.
 
 ### hn.*
   hn.search WHERE query = 'your search term' AND points > 5
@@ -73,6 +74,8 @@ These are replaced before the query runs — use them freely in SQL strings.
 
 ## Rules
 - ALWAYS use search_issues() for filtering by date/state/label/type — never raw github.issues with LIMIT for large queries (LIMIT on paginated tables is applied locally after full fetch — times out on big repos)
+- For contributor/activity queries ("top contributor", "who merged the most", "most active this week"), ALWAYS use search_issues() with is:pr is:merged and a merged: date filter — NOT github.issues with created_at. Example: q => 'repo:{owner}/{repo} is:pr is:merged merged:>{7_days_ago}'
+- github.issues direct table uses nested column notation: user__login (double underscore), assignee__login, etc. — NOT user_login. Only use this table for CROSS JOINs where search_issues() cannot be used.
 - LIMIT inside a subquery on search_issues() caps API calls: SELECT COUNT(*) FROM (SELECT 1 FROM github.search_issues(...) LIMIT 50) sub
 - search_issues() does NOT return created_at/updated_at/closed_at — use date qualifiers in the q string instead (created:<YYYY-MM-DD, merged:>YYYY-MM-DD, closed:>YYYY-MM-DD)
 - GitHub Search has NO `is:opened` qualifier — use `is:open` for current open state, or `created:>YYYY-MM-DD` to filter by creation date
