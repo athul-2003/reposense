@@ -1,13 +1,14 @@
 import json
 import os
 import time
+from datetime import datetime, timezone
 
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.rule import Rule
 
-from agent.coral_runner import run_query, get_installed_sources, get_table_columns
+from agent.coral_runner import run_query, get_installed_sources, get_table_columns, _token_map
 from agent.prompts import SYSTEM_PROMPT
 from ui.chat import show_sql, show_thinking, show_error
 
@@ -269,8 +270,18 @@ def run_agent(question: str, owner: str, repo: str) -> None:
     with show_thinking("Loading Coral schema…"):
         schema_context = get_installed_sources()
 
+    tokens = _token_map(owner, repo)
+    date_context = (
+        f"Today's date: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}\n"
+        f"Resolved token values (use these directly in SQL date filters):\n"
+        f"  7 days ago  = {tokens['{7_days_ago}']}\n"
+        f"  14 days ago = {tokens['{14_days_ago}']}\n"
+        f"  30 days ago = {tokens['{30_days_ago}']}"
+    )
+
     backend.add_user(
         f"Repo: {owner}/{repo}\n\n"
+        f"{date_context}\n\n"
         f"{schema_context}\n\n"
         f"Question: {question}"
     )
