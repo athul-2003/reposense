@@ -167,8 +167,9 @@ This is more accurate to how HN actually works. It's documented as [ED-005](engi
 reposense/
 ├── reposense.py          # CLI entrypoint, command routing, interactive loop
 ├── agent/
-│   ├── claude_agent.py   # Agentic loop — Claude or GPT-4o, with coral_query tool
-│   ├── coral_runner.py   # run_query(), substitute_tokens(), parse_table_output()
+│   ├── claude_agent.py   # Agentic loop — Claude, Groq, or GPT-4o, with coral_query tool
+│   ├── coral_runner.py   # run_query(), substitute_tokens(), disk cache
+│   ├── mcp_server.py     # MCP stdio server — run_command, coral_sql, list_sources
 │   └── prompts.py        # System prompt + grounding rules (no hallucination)
 ├── queries/              # SQL files, one per feature
 │   ├── triage.sql
@@ -296,7 +297,7 @@ All 12 commands tested across 4 repos of very different sizes and characteristic
 ## Running It Yourself
 
 ```bash
-git clone https://github.com/athulkrishnan-h/reposense
+git clone https://github.com/athul-2003/reposense
 cd reposense
 bash setup.sh
 ```
@@ -315,8 +316,24 @@ All 12 commands work without any LLM key. Agent mode (plain English questions) u
 RepoSense also runs as an MCP server for Claude Desktop and other MCP clients:
 
 ```bash
-reposense --mcp    # stdio MCP server — exposes all 12 commands as tools
+# Add to Claude Desktop in one command
+claude mcp add reposense -- reposense --mcp
 ```
+
+Or add manually to your Claude config:
+
+```json
+{
+  "mcpServers": {
+    "reposense": {
+      "command": "reposense",
+      "args": ["--mcp"]
+    }
+  }
+}
+```
+
+MCP tools exposed: `run_command` (all 12 commands), `coral_sql` (arbitrary SQL), `list_sources` (schema discovery).
 
 ---
 
@@ -349,5 +366,6 @@ RepoSense already ships a custom Stack Overflow source spec (`sources/stackoverf
 ---
 
 *RepoSense is open source under the MIT license.*
-*Built with Coral, Claude/GPT-4o, rich, click, and uv.*
-*[github.com/athulkrishnan-h/reposense](https://github.com/athulkrishnan-h/reposense)*
+*Built with Coral, Claude/Groq/GPT-4o, rich, click, and uv.*
+*[github.com/athul-2003/reposense](https://github.com/athul-2003/reposense)*
+*Demo video: [youtu.be/7hxAJ9SiKqU](https://youtu.be/7hxAJ9SiKqU)*

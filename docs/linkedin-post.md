@@ -39,11 +39,12 @@ The entire project was built and submitted within the hackathon week — from id
 
 **Try it:**
 ```
-git clone https://github.com/athulkrishnan-h/reposense
+git clone https://github.com/athul-2003/reposense
 cd reposense && bash setup.sh
 reposense --repo your-org/your-repo triage
 ```
 
+Demo video → https://youtu.be/7hxAJ9SiKqU
 Full write-up → [link to blog post]
 
 #OpenSource #SQL #GitHub #DeveloperTools #Hackathon #Coral #ClaudeAI #Python #CLI
@@ -54,11 +55,13 @@ Full write-up → [link to blog post]
 
 Full blog post on how I built this, the SQL patterns, and the 12 engineering decisions from testing on 14,000-issue repos: [link to blog post]
 
+Demo video: https://youtu.be/7hxAJ9SiKqU
+
 ---
 
 ## Notes before posting
 
 - Add 1-2 terminal screenshots (health score bar + triage table) — images get 3-5x more reach on LinkedIn
 - Tag Coral's LinkedIn page and WeMakeDevs if they have one
-- Post before May 31 so judges see it
-- Best time: 10am–12pm your timezone on a weekday
+- Post today — it's May 31, last day judges will see it
+- Best time: 10am–12pm your timezone
