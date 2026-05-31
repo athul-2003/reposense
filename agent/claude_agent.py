@@ -1,7 +1,8 @@
 import json
 import os
+import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -13,6 +14,31 @@ from agent.prompts import SYSTEM_PROMPT
 from ui.chat import show_sql, show_thinking, show_error
 
 console = Console()
+
+_DATE_IN_FILTER_RE = re.compile(r'(?<=[><=:])\s*(\d{4}-\d{2}-\d{2})\b')
+
+
+def _fix_stale_dates(sql: str, owner: str, repo: str) -> str:
+    """Replace dates >400 days old with the 7-days-ago value.
+
+    gpt-4o-mini has a training cutoff of ~Oct 2023 and ignores date context
+    injected via prompt. Any date that old in a SQL filter is training-knowledge
+    drift, not intentional user data. 400 days is conservative — it catches 2023
+    dates without touching legitimate recent-history queries (e.g. 2025 data).
+    """
+    tokens = _token_map(owner, repo)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=400)
+
+    def _replace(m: re.Match) -> str:
+        try:
+            d = datetime.strptime(m.group(1), '%Y-%m-%d').replace(tzinfo=timezone.utc)
+            if d < cutoff:
+                return tokens['{7_days_ago}']
+        except ValueError:
+            pass
+        return m.group(1)
+
+    return _DATE_IN_FILTER_RE.sub(_replace, sql)
 
 _CLAUDE_TOOL_QUERY = {
     "name": "coral_query",
@@ -90,10 +116,11 @@ _OPENAI_TOOL = _OPENAI_TOOL_QUERY
 
 
 class _ClaudeBackend:
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, api_key: str, system_prompt: str = SYSTEM_PROMPT) -> None:
         import anthropic
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = os.getenv("ANTHROPIC_MODEL") or os.getenv("REPOSENSE_MODEL", "claude-sonnet-4-6")
+        self.system_prompt = system_prompt
         self.messages: list = []
 
     def add_user(self, content: str) -> None:
@@ -103,7 +130,7 @@ class _ClaudeBackend:
         return self.client.messages.create(
             model=self.model,
             max_tokens=4096,
-            system=SYSTEM_PROMPT,
+            system=self.system_prompt,
             tools=[_CLAUDE_TOOL_QUERY, _CLAUDE_TOOL_SCHEMA],
             messages=self.messages,
         )
@@ -153,11 +180,11 @@ class _ClaudeBackend:
 
 
 class _OpenAIBackend:
-    def __init__(self, api_key: str, base_url: str | None = None, default_model: str = "gpt-4o-mini") -> None:
+    def __init__(self, api_key: str, base_url: str | None = None, default_model: str = "gpt-4o-mini", system_prompt: str = SYSTEM_PROMPT) -> None:
         import openai
         self.client = openai.OpenAI(api_key=api_key, base_url=base_url)
         self.model = os.getenv("OPENAI_MODEL") or os.getenv("REPOSENSE_MODEL", default_model)
-        self.messages: list = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.messages: list = [{"role": "system", "content": system_prompt}]
 
     def add_user(self, content: str) -> None:
         self.messages.append({"role": "user", "content": content})
@@ -219,11 +246,12 @@ class _OpenAIBackend:
 
 
 class _GroqBackend(_OpenAIBackend):
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, api_key: str, system_prompt: str = SYSTEM_PROMPT) -> None:
         super().__init__(
             api_key=api_key,
             base_url="https://api.groq.com/openai/v1",
             default_model="llama-3.3-70b-versatile",
+            system_prompt=system_prompt,
         )
         if groq_model := os.getenv("GROQ_MODEL"):
             self.model = groq_model
@@ -236,19 +264,35 @@ class _GroqBackend(_OpenAIBackend):
 MAX_AGENT_TURNS = 10  # safety cap — prevents runaway loops burning API credits
 
 
-def _get_backend() -> _ClaudeBackend | _OpenAIBackend | _GroqBackend | None:
+def _build_system_prompt(owner: str, repo: str) -> str:
+    """Inject current date at the TOP of system prompt so the model never guesses dates."""
+    tokens = _token_map(owner, repo)
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    date_block = (
+        f"CRITICAL — Today's date is {today}. "
+        f"For ALL date filters in SQL use ONLY these values: "
+        f"7d ago={tokens['{7_days_ago}']}, "
+        f"14d ago={tokens['{14_days_ago}']}, "
+        f"30d ago={tokens['{30_days_ago}']}. "
+        f"NEVER use any other date. Ignore any date from your training knowledge.\n\n"
+    )
+    return date_block + SYSTEM_PROMPT
+
+
+def _get_backend(system_prompt: str) -> _ClaudeBackend | _OpenAIBackend | _GroqBackend | None:
     if key := os.getenv("ANTHROPIC_API_KEY"):
-        return _ClaudeBackend(key)
+        return _ClaudeBackend(key, system_prompt=system_prompt)
     if key := os.getenv("GROQ_API_KEY"):
-        return _GroqBackend(key)
+        return _GroqBackend(key, system_prompt=system_prompt)
     if key := os.getenv("OPENAI_API_KEY"):
-        return _OpenAIBackend(key)
+        return _OpenAIBackend(key, system_prompt=system_prompt)
     return None
 
 
 def run_agent(question: str, owner: str, repo: str) -> None:
     """Agentic loop: chosen LLM decides which Coral queries to run, interprets results."""
-    backend = _get_backend()
+    system_prompt = _build_system_prompt(owner, repo)
+    backend = _get_backend(system_prompt)
     if backend is None:
         console.print(
             Panel(
@@ -270,18 +314,8 @@ def run_agent(question: str, owner: str, repo: str) -> None:
     with show_thinking("Loading Coral schema…"):
         schema_context = get_installed_sources()
 
-    tokens = _token_map(owner, repo)
-    date_context = (
-        f"Today's date: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}\n"
-        f"Resolved token values (use these directly in SQL date filters):\n"
-        f"  7 days ago  = {tokens['{7_days_ago}']}\n"
-        f"  14 days ago = {tokens['{14_days_ago}']}\n"
-        f"  30 days ago = {tokens['{30_days_ago}']}"
-    )
-
     backend.add_user(
         f"Repo: {owner}/{repo}\n\n"
-        f"{date_context}\n\n"
         f"{schema_context}\n\n"
         f"Question: {question}"
     )
@@ -361,11 +395,14 @@ def run_agent(question: str, owner: str, repo: str) -> None:
                             result = get_installed_sources()
                 else:
                     query_count += 1
+                    call["sql"] = _fix_stale_dates(call["sql"], owner, repo)
                     show_sql(call["sql"], f"Coral query {query_count}")
                     with show_thinking(f"Running query {query_count}…"):
                         result = run_query(call["sql"], owner, repo)
                     if result.startswith("Error:"):
                         show_error(result)
+                        if "rate limit" in result.lower() or "429" in result:
+                            result += "\n\nDo NOT retry this query — the API is rate-limited. Tell the user to wait 30 seconds and try again."
                 results.append({"id": call["id"], "content": result})
             backend.append_tool_results(results)
 
