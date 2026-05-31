@@ -19,9 +19,9 @@ You point it at any repo and get:
 - What the tech community is discussing alongside your open issues (cross-source SQL JOIN)
 - Top Stack Overflow questions for this project's technology
 
-And if none of those fit — you just ask in plain English. The built-in Claude agent writes the SQL and runs it live.
+And if none of those fit — you just ask in plain English. The built-in AI agent (Claude, Groq, or GPT-4o) writes the SQL and runs it live.
 
-It also runs as an **MCP server** — `reposense --mcp` — so Claude Desktop can call all 12 commands directly. Results are cached to disk for 5 minutes (matching Coral's own HTTP cache window), so repeated queries return instantly with a `⚡ cached` indicator.
+It also runs as an **MCP server** — one command to set up: `claude mcp add reposense -- reposense --mcp` — so Claude Desktop can call all 12 commands directly. Results are cached to disk for 5 minutes (matching Coral's own HTTP cache window), so repeated queries return instantly with a `⚡ cached` indicator.
 
 **The interesting part: every command is a SQL query hitting live APIs.**
 
@@ -45,7 +45,7 @@ reposense --repo your-org/your-repo triage
 ```
 
 Demo video → https://youtu.be/7hxAJ9SiKqU
-Full write-up → [link to blog post]
+Full write-up → https://dev.to/athulkrishnan_h_210b5ea44/how-i-built-reposense-a-github-intelligence-cli-with-coral-sql-4jgm
 
 #OpenSource #SQL #GitHub #DeveloperTools #Hackathon #Coral #ClaudeAI #Python #CLI
 
@@ -53,7 +53,7 @@ Full write-up → [link to blog post]
 
 ## First comment (post immediately after — boosts reach)
 
-Full blog post on how I built this, the SQL patterns, and the 12 engineering decisions from testing on 14,000-issue repos: [link to blog post]
+Full blog post on how I built this, the SQL patterns, and the 12 engineering decisions from testing on 14,000-issue repos: https://dev.to/athulkrishnan_h_210b5ea44/how-i-built-reposense-a-github-intelligence-cli-with-coral-sql-4jgm
 
 Demo video: https://youtu.be/7hxAJ9SiKqU
 
