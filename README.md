@@ -43,7 +43,7 @@ reposense --repo facebook/react
 ★ `pulse` uses a single cross-source SQL JOIN across two Coral sources. `so-buzz`, `dev-buzz`, and `scorecard` require their respective optional sources (see Quick Start).
 ★★ `scorecard` is zero-config — no API key needed; queries the OpenSSF Scorecard API for any public GitHub repo.
 
-Any question not covered by those 12 commands → type it in plain English and the built-in AI agent (Claude or GPT-4o) writes the SQL and runs it for you.
+Any question not covered by those 12 commands → type it in plain English and the built-in AI agent (Claude, Groq, or GPT-4o) writes the SQL and runs it for you.
 
 ---
 
@@ -547,8 +547,9 @@ reposense/
 │       ├── manifest.yaml   # Coral DSL v3 source spec — OpenSSF Scorecard API (zero auth)
 │       └── README.md       # Install instructions, score reference, DSL patterns used
 ├── agent/
-│   ├── claude_agent.py     # Agentic loop — Claude or GPT-4o backend
-│   ├── coral_runner.py     # run_query(), substitute_tokens(), validate_repo_slug()
+│   ├── claude_agent.py     # Agentic loop — Claude, Groq, or GPT-4o backend
+│   ├── coral_runner.py     # run_query(), substitute_tokens(), disk cache
+│   ├── mcp_server.py       # MCP stdio server — run_command, coral_sql, list_sources
 │   └── prompts.py          # System prompt with Coral table docs + security guardrails
 └── ui/
     ├── splash.py           # Logo, health score bar, concurrent signals
@@ -608,7 +609,7 @@ The query hit the 90-second safety timeout. This is most common with `duplicates
 **`Error:` from Coral on `hn-buzz`**
 Usually means the HN source is not installed. Run:
 ```bash
-coral source add --file coral-repo/sources/community/hn/manifest.yaml
+coral source add --file sources/hn/manifest.yaml
 ```
 
 **Agent mode says "No API key found"**
@@ -633,6 +634,20 @@ PACKAGE_NAME=express
 PACKAGE_ECOSYSTEM=npm
 PACKAGE_VERSION=4.17.1
 ```
+
+---
+
+## What's Next
+
+A few things I'd add with more time:
+
+1. **Slack source** — show which GitHub issues are being discussed in your team's Slack channels
+2. **Linear/Jira source** — cross-reference GitHub issues against Linear tickets
+3. **Weekly digest mode** — `reposense digest --repo org/repo --email me@example.com` as a scheduled cron
+4. **Multi-repo mode** — `reposense --repos org/repo1,org/repo2 triage` for OSS program managers
+5. **Shell completion** — `reposense <TAB>` to see available commands
+
+All are purely additive — new `.sql` files, new Coral source specs, or new CLI flags.
 
 ---
 
