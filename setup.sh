@@ -77,11 +77,17 @@ add_source "scorecard"     "$SCRIPT_DIR/sources/scorecard/manifest.yaml"
 
 # ── 4. Install RepoSense ───────────────────────────────────────────────────
 step "Installing RepoSense"
+if ! command -v uv &>/dev/null; then
+    warn "uv not found — installing now (fast Python package manager)..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+fi
 if command -v uv &>/dev/null; then
     uv tool install . --reinstall-package reposense 2>/dev/null || uv tool install .
+    export PATH="$HOME/.local/bin:$PATH"
     ok "reposense installed (uv)"
 else
-    warn "uv not found — falling back to pip install -e ."
+    warn "uv install failed — falling back to pip install -e ."
     pip install -e . --quiet
     ok "reposense installed (pip)"
 fi
