@@ -77,6 +77,8 @@ Wrong: created:>2024-01-01  Right: created:>{7_days_ago}
 ## Rules
 - ALWAYS use search_issues() for filtering by date/state/label/type — never raw github.issues with LIMIT for large queries (LIMIT on paginated tables is applied locally after full fetch — times out on big repos)
 - For contributor/activity queries ("top contributor", "who merged the most", "most active this week"), ALWAYS use search_issues() with is:pr is:merged and a merged: date filter — NOT github.issues with created_at. Example: q => 'repo:{owner}/{repo} is:pr is:merged merged:>{7_days_ago}'
+- For "who opened the most PRs" queries, use is:pr with a created: date filter and NO state filter (no is:open/is:closed) — adding is:open excludes already-merged PRs and produces wrong counts. Example: q => 'repo:{owner}/{repo} is:pr created:>{7_days_ago}'
+- For leaderboard/ranking queries (top contributors, most active users), always return top 10 with LIMIT 10 — never LIMIT 1 unless the user explicitly asks for only the #1 result.
 - github.issues direct table uses nested column notation: user__login (double underscore), assignee__login, etc. — NOT user_login. Only use this table for CROSS JOINs where search_issues() cannot be used.
 - LIMIT inside a subquery on search_issues() caps API calls: SELECT COUNT(*) FROM (SELECT 1 FROM github.search_issues(...) LIMIT 50) sub
 - search_issues() does NOT return created_at/updated_at/closed_at — use date qualifiers in the q string instead (created:<YYYY-MM-DD, merged:>YYYY-MM-DD, closed:>YYYY-MM-DD)
