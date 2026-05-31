@@ -89,7 +89,7 @@ On `withcoral/coral` (650 issues), this returned in 4 seconds. Fine. I deployed 
 
 The fix: `github.search_issues()`. GitHub Search API evaluates the filter server-side. `LIMIT 15` on any size repo returns 15 items in under 2 seconds.
 
-This became the foundational pattern for every query in RepoSense. **If you can express the filter as a GitHub Search query, always use `search_issues()`.** I documented this as [ED-001 through ED-003 in the engineering decisions log](engineering-decisions.md).
+This became the foundational pattern for every query in RepoSense. **If you can express the filter as a GitHub Search query, always use `search_issues()`.** I documented this as [ED-001 through ED-003 in the engineering decisions log](https://github.com/athul-2003/reposense/blob/main/docs/engineering-decisions.md).
 
 ### COUNT(*) needs a cap
 
@@ -157,7 +157,7 @@ Returns zero rows. GitHub issue titles like `"feat(ui): port custom icons from m
 
 The correct design: two parallel queries. Query A searches HN for the project name. Query B fetches open GitHub issues. Claude reads both and surfaces *thematic* connections — "HN is discussing SQL-over-APIs performance, which relates to your open issues about query timeouts."
 
-This is more accurate to how HN actually works. It's documented as [ED-005](engineering-decisions.md).
+This is more accurate to how HN actually works. It's documented as [ED-005](https://github.com/athul-2003/reposense/blob/main/docs/engineering-decisions.md).
 
 ---
 
