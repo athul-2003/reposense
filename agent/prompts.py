@@ -71,6 +71,8 @@ Direct table (for CROSS JOIN / when search not needed):
 ## Runtime substitutions (always available)
 {owner}, {repo}, {30_days_ago}, {14_days_ago}, {7_days_ago}
 These are replaced before the query runs — use them freely in SQL strings.
+NEVER hardcode or compute a date yourself — ALWAYS use these tokens for any date filter.
+Wrong: created:>2024-01-01  Right: created:>{7_days_ago}
 
 ## Rules
 - ALWAYS use search_issues() for filtering by date/state/label/type — never raw github.issues with LIMIT for large queries (LIMIT on paginated tables is applied locally after full fetch — times out on big repos)
