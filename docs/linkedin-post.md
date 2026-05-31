@@ -42,9 +42,11 @@ The entire project was built and submitted within the hackathon week — from id
 git clone https://github.com/athul-2003/reposense
 cd reposense && bash setup.sh
 reposense --repo your-org/your-repo triage
+
+# or after install, just:
+reposense
 ```
 
-Demo video → https://youtu.be/7hxAJ9SiKqU
 Full write-up → https://dev.to/athulkrishnan_h_210b5ea44/how-i-built-reposense-a-github-intelligence-cli-with-coral-sql-4jgm
 
 #OpenSource #SQL #GitHub #DeveloperTools #Hackathon #Coral #ClaudeAI #Python #CLI
@@ -54,8 +56,6 @@ Full write-up → https://dev.to/athulkrishnan_h_210b5ea44/how-i-built-reposense
 ## First comment (post immediately after — boosts reach)
 
 Full blog post on how I built this, the SQL patterns, and the 12 engineering decisions from testing on 14,000-issue repos: https://dev.to/athulkrishnan_h_210b5ea44/how-i-built-reposense-a-github-intelligence-cli-with-coral-sql-4jgm
-
-Demo video: https://youtu.be/7hxAJ9SiKqU
 
 ---
 
